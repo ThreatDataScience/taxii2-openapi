@@ -1,0 +1,1357 @@
+swagger: '2.0'
+info:
+  version: "2.0"
+  title: TAXII 2.0 
+  description: |
+    Trusted Automated Exchange of Intelligence Information (TAXII™) is an application protocol for exchanging CTI over
+    HTTPS. ​TAXII defines a RESTful API (a set of services and message exchanges) and a set of requirements for TAXII
+    Clients and Servers.
+  termsOfService: terms
+  contact:
+    name: "Richard Struse"
+    url: "https://oasis-open.github.io/cti-documentation/taxii/intro"
+    email: "rjs@mitre.org" 
+  license:
+    name: MIT
+    url: http://opensource.org/licenses/MIT
+produces: 
+  - "application/vnd.oasis.taxii+json"
+  - "application/vnd.oasis.taxii+json; version=2.0"
+  - "application/vnd.oasis.stix+json"
+  - "application/vnd.oasis.stix+json; version=2.0"
+consumes: 
+  - "application/vnd.oasis.taxii+json"
+  - "application/vnd.oasis.taxii+json; version=2.0"
+  - "application/vnd.oasis.stix+json"
+  - "application/vnd.oasis.stix+json; version=2.0"
+securityDefinitions:
+  BasicAuth:
+    type: basic
+
+tags: 
+  - name: "Server Information"
+    description: ""
+  - name: "API Root"
+    description: ""
+  - name: "Status Information"
+    description: ""
+  - name: "Collections"
+    description: |
+      A TAXII Collection is a logical grouping of threat intelligence that enables the exchange of information between a
+      TAXII Client and a TAXII Server in a request-response manner. Collections are hosted in the context of an API
+      Root. Each API Root MAY have zero or more Collections. As with other TAXII Endpoints, the ability of TAXII Clients
+      to read from and write to Collections can be restricted depending on their permissions level.
+  - name: "Objects"
+    description: ""
+
+paths:
+  '/taxii/':
+    get:
+      tags: 
+        - Server Information
+      summary: Provides general information about a TAXII Server
+      operationId: getServerInformation
+      consumes:
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      produces: 
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      description: |
+        This Endpoint provides general information about a TAXII Server, including the advertised API Roots.
+        It's a common entry point for TAXII Clients into the data and services provided by a TAXII Server.
+        For example, clients auto-discovering TAXII Servers via the DNS SRV record defined in section ​1.4.1​ will be able
+        to automatically retrieve a discovery response for that server by requesting the ​/taxii/​ path on that domain.
+        Discovery API responses ​MAY ​advertise any TAXII API Root that they have permission to advertise, included
+        those hosted on other servers.
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/discovery'
+            example: |
+              {
+                "title": "Some TAXII Server",
+                "description": "This TAXII Server contains a listing of...",
+                "contact": "string containing contact information",
+                "default": "https://example.com/api2/",
+                "api_roots": [
+                  "https://example.com/api1/",
+                  "https://example.com/api2/",
+                  "https://example.net/trustgroup1/"
+                ]
+              }
+        404:
+          description: No discovery information could be found or the requester does not haveaccess to get discovery information.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+  '/{api-root}/':
+    get:
+      summary: Provides general information about an API Root
+      operationId: getAPIRoot
+      parameters: 
+        - in: path
+          name: api-root
+          description: The Human-Readable API root
+          required: true
+      consumes:
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      produces:
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      tags: 
+        - API Root
+      description: |
+        This Endpoint provides general information about an API Root, which can be used to help users and clients decide
+        whether and how they want to interact with it. Multiple API Roots MAY be hosted on a single TAXII Server. Often,
+        an API Root represents a single trust group.
+
+        - Each API Root MUST have a unique URL.
+        - Each API Root MAY have different authentication and authorization schemes.
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/api-root'
+            example: |
+              {
+                "title": "Malware Research Group",
+                "description": "A trust group setup for malware researchers",
+                "versions": ["taxii-2.0"],
+                "max_content_length": 9765625
+              }
+        404:
+          description: No API Root could be found or the requester does not have access to get API Root information.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        401:
+          description: The client either needs to authenticate or does not have access to get API Root information.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        403:
+          description: The client either needs to authenticate or does not have access to get API Root information.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+  '/{api-root}/status/{status-id}/':
+    get:
+      summary: Provides general information about the status of a previous request
+      operationId: getStatus
+      parameters: 
+        - in: path
+          name: api-root
+          description: The Human-Readable API root
+          required: true
+        - in: path
+          description: The status ID
+          name: status-id
+          schema:
+            $ref: '#/definitions/identifier'
+          required: true
+      tags: 
+        - Status Information
+      consumes:
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      produces:
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      description: |
+        This Endpoint provides information about the status of a previous request. In TAXII 2.0, the only request that
+        can be monitored is one to add objects to a Collection (see section 5.4). It is typically used by TAXII Clients
+        to monitor a request that they made in order to take action when it is complete.
+
+        TAXII Servers SHOULD provide status messages at this Endpoint while the request is in progress until at least 24
+        hours after it has been marked completed.
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/status'
+            example: |
+              {
+                "id": "2d086da7-4bdc-4f91-900e-d77486753710",
+                "status": "pending",
+                "request_timestamp": "2016-11-02T12:34:34.12345Z",
+                "total_objects": 4,
+                "success_count": 1,
+                "successes": [
+                  "indicator--c410e480-e42b-47d1-9476-85307c12bcbf"
+                ],
+                "failure_count": 1,
+                "failures": [
+                  {
+                    "id": "malware--664fa29d-bf65-4f28-a667-bdb76f29ec98",
+                    "message": "Unable to process object"
+                  }
+                ],
+                "pending_count": 2,
+                "pendings": [
+                  "indicator--252c7c11-daf2-42bd-843b-be65edca9f61",
+                  "relationship--045585ad-a22f-4333-af33-bfd503a683b5"
+                ]
+              }
+        404:
+          description: No status could be found or the requester does not have access to get status information.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        401:
+          description: The client either needs to authenticate or does not have access to get status information
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        403:
+          description: The client either needs to authenticate or does not have access to get status information
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+  '/{api-root}/collections/':
+    get:
+      summary: Provides information about the Collections hosted under this API Root
+      operationId: getCollections
+      tags:
+        - Collections
+      consumes:
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      produces:
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      description: |
+        This Endpoint provides information about the Collections hosted under this API Root. This is similar to the
+        response to get a Collection (see section 5.2), but rather than providing information about one Collection it
+        provides information about all of the Collections. Most importantly, it provides the Collection's id, which is
+        used to request objects or manifest entries from the Collection.
+      parameters:
+        - in: path
+          name: api-root
+          description: the base URL of the API Root containing the Collections
+          required: true
+        - in:  header
+          name: Range
+          type: string
+          description: ""
+          schema:
+            pattern: "^items [\\d]+-[\\d]+$"
+            example: "items 0-49"
+      responses:
+        200:
+          description: OK
+          headers:
+            Content-Range:
+              description: ""
+              type: string
+              pattern: "^items [\\d]+-[\\d]+\\/[\\d]+$"
+          schema:
+            $ref: '#/definitions/collections'
+            example: |
+              {
+                "collections": [
+                  {
+                    "id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+                    "title": "High Value Indicator Collection",
+                    "description": "This data collection is for collecting high value IOCs",
+                    "can_read": true,
+                    "can_write": false,
+                    "media_types": [
+                      "application/vnd.oasis.stix+json; version=2.0"
+                    ]
+                  },
+                  {
+                    "id": "52892447-4d7e-4f70-b94d-d7f22742ff63",
+                    "title": "Indicators from the past 24-hours",
+                    "description": "This data collection is for collecting current IOCs",
+                    "can_read": true,
+                    "can_write": false,
+                    "media_types": [
+                      "application/vnd.oasis.stix+json; version=2.0"
+                    ]
+                  }
+                ]
+              }
+        404:
+          description: The Collections resource does not exist or the client does not have access to the Collections resource.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        401:
+          description: The client either needs to authenticate or does not have access to get Collection information.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        403:
+          description: The client either needs to authenticate or does not have access to get Collection information.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+  '/{api-root}/collections/{collection-id}/':
+    get:
+      summary: Provides general information about a Collection
+      tags:
+        - Collections
+      description: |
+        This Endpoint provides general information about a Collection, which can be used to help users and clients
+        decide whether and how they want to interact with it. For example, it will tell clients what it's called and
+        what permissions they have to it.
+      operationId: getCollection
+      consumes:
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      produces:
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      parameters:
+        - in: path
+          name: api-root
+          description: the base URL of the API Root containing the Collection
+          required: true
+        - in: path
+          name: collection-id
+          description: the ​identifier​ of the Collection being requested
+          schema:
+            $ref: '#/definitions/identifier'
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/collection'
+            example: |
+              {
+                "id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+                "title": "High Value Indicator Collection",
+                "description": "This data collection is for collecting high value IOCs",
+                "can_read": true,
+                "can_write": false,
+                "media_types": [
+                  "application/vnd.oasis.stix+json; version=2.0"
+                ]
+              }
+        404:
+          description: The Collection could not be found or the requester does not have access to get Collection information.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        401:
+          description: The client either needs to authenticate or does not have access to get Collection information
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        403:
+          description: The client either needs to authenticate or does not have access to get Collection information
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+  '/{api-root}/collections/{collection-id}/objects/':
+    get:
+      description: |
+        This Endpoint retrieves objects from a Collection. Clients can search for objects in the Collection, retrieve
+        all objects in a Collection, or paginate through objects in the Collection.
+
+        To support searching the Collection, the Endpoint supports filtering as defined in section 3.5. Clients can
+        provide one or more filter parameters to get objects with a specific ID, of a specific type, or with a specific
+        version. Future versions of TAXII will add more advanced filtering capabilities.
+
+        To support requesting a large number of objects, the Endpoint supports pagination as defined in section 3.4.
+        Clients can optionally provide their desired number of items per page and which page they want and servers will
+        return that result set. Servers can also override client-provided pagination parameters, including requiring
+        pagination when it isn't requested. As such, all clients should be aware that responses to this Endpoint may be
+        paginated and be prepared to properly handle that.
+
+        When requesting STIX 2.0 content, the content will always be delivered in a STIX bundle (even if there's only
+        zero or one objects, in which case the bundle will be empty or only contain one object). Other content types can
+        be requested by using a different Accept header, however the specific representation of other content types is
+        not defined.
+      summary: Retreives objects from a collection
+      operationId: getCollectionObjects
+      consumes:
+        - "application/vnd.oasis.stix+json; version=2.0"
+      produces:
+        - "application/vnd.oasis.stix+json; version=2.0"
+      tags:
+        - Objects
+      parameters:
+        - in: path
+          name: api-root
+          description: the base URL of the API Root containing the Collection
+          required: true
+        - in: path
+          name: collection-id
+          description: the identifier of the Collection from which objects are being requested
+          schema:
+            $ref: '#/definitions/identifier'
+          required: true
+        - in: query
+          name: match[id]
+          description: The identifier of the object(s) that are being requested. When searching for a STIX Object, this is a STIX ID.
+          type: array
+          collectionFormat: csv
+        - in: query
+          name: match[type]
+          description: |
+            The type of the object(s) that are being requested. Only the types listed in this parameter are permitted in
+            the response.
+
+            Requests for types defined in [STIX™ Version 2.0. Part 2: STIX ObjectsSTIX 2.0] MUST NOT result in an error
+            due to an invalid type.
+
+            Requests for other types not defined in [STIX™ Version 2.0. Part 2: STIX ObjectsSTIX 2.0] MAY be fulfilled.
+          type: array
+          collectionFormat: csv
+        - in: query
+          name: match[version]
+          type: string
+          description: |
+            The version of the object(s) that are being requested. If no version parameter is provided, the server MUST
+            return the latest version of the object.
+
+            Valid values for the version parameter are:
+              - `last`: requests the latest version of an object. This is the default parameter value.
+              - `first`: requests the earliest version of an object
+              - `all`: requests all versions of an object
+              - `<value>`: requests a specific version of an object.
+                - For STIX objects this requests objects whose modified time matches exactly the provided value. This
+                value MUST follow the rules for timestamp as defined in [STIX™ Version 2.0. Part 1: STIX Core Concepts].
+                - For example: "2016-01-01T01:01:01.000Z" tells the server to give you the exact STIX object with a
+                modified time of "2016-01-01T01:01:01.000Z".
+                - For non-STIX objects this value MAY be any string that represents the version of that object type. If
+                the target format does not support object versions, this parameter MUST be ignored.
+        - in:  header
+          name: Range
+          type: string
+          description: ""
+          schema:
+            pattern: "^items [\\d]+-[\\d]+$"
+            example: "items 0-49"
+      responses:
+        200:
+          description: OK
+          headers:
+            Content-Range:
+              description: ""
+              type: string
+              pattern: "^items [\\d]+-[\\d]+\\/[\\d]+$"
+          schema:
+            $ref: '#/definitions/bundle'
+            example: |
+              {
+                "type": "bundle",
+                ...
+                "objects": [
+                  {
+                    "type": "indicator",
+                    ...
+                  }
+                ]
+              }
+        404:
+          description: The Objects resource does not exist or the client does not have access to the Objects resource.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        401:
+          description: The client either needs to authenticate or does not have access to get objects in the Collection.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        403:
+          description: The client either needs to authenticate or does not have access to get objects in the Collection.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+    post:
+      summary: Adds objects to a collection
+      tags:
+        - Objects
+      operationId: postCollectionObjects
+      consumes:
+        - "application/vnd.oasis.stix+json; version=2.0"
+      produces:
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      description: |
+        This Endpoint adds objects to a Collection.
+
+        Successful responses to this Endpoint will contain a status resource describing the status of the request. The
+        status resource contains an id, which can be used to make requests to the get status Endpoint (see section 4.3),
+        a status flag to indicate whether the request is completed or still being processed, and information about the
+        status of the particular objects in the request.
+
+        If the request is marked pending in the status field, the client SHOULD periodically poll the get status
+        Endpoint to get an updated status until such a time that the status property returns a value of complete.
+        At that point, the request can be considered complete.
+
+        When adding STIX 2.0 content, clients MUST deliver all objects in a STIX bundle. Other content types MAY be
+        added (if the Collection supports it) by using a different Content-Type header, however the specific
+        representation of other content types is not defined.
+      parameters:
+        - in: path
+          name: api-root
+          description: the base URL of the API Root containing the Collection
+          required: true
+        - in: path
+          name: collection-id
+          description: the identifier of the Collection to which objects are being added
+          schema:
+            $ref: '#/definitions/identifier'
+          required: true
+        - in: body
+          required: true
+          schema:
+            $ref: '#/definitions/bundle'
+            example: |
+              {
+                "type": "bundle",
+                ...
+                "objects": [
+                  {
+                    "type": "indicator",
+                    "id": "indicator--c410e480-e42b-47d1-9476-85307c12bcbf",
+                    ...
+                  }
+                ]
+              }
+      responses:
+        202:
+          description: Accepted
+          schema:
+            $ref: '#/definitions/status'
+            example: |
+              {
+                "id": "2d086da7-4bdc-4f91-900e-d77486753710",
+                "status": "pending",
+                "request_timestamp": "2016-11-02T12:34:34.12345Z",
+                "total_count": 4,
+                "success_count": 1,
+                "successes": [
+                  "indicator--c410e480-e42b-47d1-9476-85307c12bcbf"
+                ],
+                "failure_count": 0,
+                "pending_count": 3
+              }
+        422:
+          description: |
+            The object type or version is not supported or could not be processed. This can happen, for example, when
+            sending a version of STIX that this TAXII Server does not support and cannot process, when sending a
+            malformed body, or other unprocessable content.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        401:
+          description: The client either needs to authenticate or does not have access to get Collection information
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        403:
+          description: The client either needs to authenticate or does not have access to get Collection information
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+
+  '/{api-root}/collections/{collection-id}/objects/{object-id}/':
+    get:
+      summary: Gets an object from a Collection by it's `id`
+      tags:
+        - Objects
+      description: |
+        This Endpoint gets an object from a Collection by its id. It can be thought of as a search where the match[id]
+        parameter is set to the <object-id> in the path. For STIX 2.0 objects, the <object-id> MUST be the STIX id.
+
+        To support getting a particular version of an object, this Endpoint supports filtering as defined in section
+        3.5. The only valid match parameter is version.
+
+        When requesting STIX 2.0 content, the content will always be delivered in a STIX bundle (even if there's only
+        zero or one objects, in which case the bundle will be empty or only contain one object). Other content types MAY
+        be requested by using a different Accept header, however the specific representation of other content types is
+        not defined.
+      operationId: getCollectionObject
+      consumes:
+        - "application/vnd.oasis.stix+json; version=2.0"
+      produces:
+        - "application/vnd.oasis.stix+json; version=2.0"
+      parameters:
+        - in: path
+          name: api-root
+          description: the base URL of the API Root containing the Collection
+          required: true
+        - in: path
+          name: collection-id
+          description: the ​identifier​ of the Collection being requested
+          schema:
+            $ref: '#/definitions/identifier'
+          required: true
+        - in: path
+          name: object-id
+          description: the ID of the object being requested
+          schema:
+            $ref: '#/definitions/identifier'
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/bundle'
+            example: |
+              {
+                "type": "bundle",
+                ...,
+                "indicators": [
+                  {
+                    "type": "indicator",
+                    "id": "indicator--252c7c11-daf2-42bd-843b-be65edca9f61",
+                    ...,
+                  }
+                ]
+              }
+        404:
+          description: The object could not be found or the requester does not have access to get the object.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        401:
+          description: The client either needs to authenticate or does not have access to get the object.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        403:
+          description: The client either needs to authenticate or does not have access to get the object.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+  '/{api-root}/collections/{collection-id}/manifest/':
+    get:
+      summary: Retrieves a manifest about objects from a Collection
+      tags:
+        - Objects
+      operationId: getCollectionManifest
+      consumes:
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      produces:
+        - "application/vnd.oasis.taxii+json; version=2.0"
+      description: |
+        This Endpoint retrieves a manifest about objects from a Collection. It supports filtering and pagination
+        identical to the get objects Endpoint (see section 5.3) but rather than returning the object itself it returns
+        metadata about the object. It can be used to retrieve metadata to decide whether it's worth retrieving the
+        actual objects.
+
+        This Endpoint supports filtering, which is applied against the source object rather than the manifest entry for
+        an object. Thus, searching the manifest for a type of indicator will return the manifest entries for objects
+        with a type of indicator, even though the manifest doesn't have a type field.
+
+        Filtering is based on properties of the objects that the manifest entries represent. For example, filtering by
+        type=indicator will return manifest entries for objects with a type of indicator.
+      parameters:
+        - in: path
+          name: api-root
+          description: the base URL of the API Root containing the Collection
+          required: true
+        - in: path
+          name: collection-id
+          description: the ​identifier​ of the Collection being requested
+          schema:
+            $ref: '#/definitions/identifier'
+          required: true
+        - in:  header
+          name: Range
+          type: string
+          description: ""
+          schema:
+            pattern: "^items [\\d]+-[\\d]+$"
+            example: "items 0-49"
+        - in: query
+          name: match[id]
+          description: The identifier of the object(s) that are being requested. When searching for a STIX Object, this is a STIX ID.
+          type: array
+          collectionFormat: csv
+        - in: query
+          name: match[type]
+          description: |
+            The type of the object(s) that are being requested. Only the types listed in this parameter are permitted in
+            the response.
+
+            Requests for types defined in [STIX™ Version 2.0. Part 2: STIX ObjectsSTIX 2.0] MUST NOT result in an error
+            due to an invalid type.
+
+            Requests for other types not defined in [STIX™ Version 2.0. Part 2: STIX ObjectsSTIX 2.0] MAY be fulfilled.
+          type: array
+          collectionFormat: csv
+        - in: query
+          name: match[version]
+          type: string
+          description: |
+            The version of the object(s) that are being requested. If no version parameter is provided, the server MUST
+            return the latest version of the object.
+
+            Valid values for the version parameter are:
+              - `last`: requests the latest version of an object. This is the default parameter value.
+              - `first`: requests the earliest version of an object
+              - `all`: requests all versions of an object
+              - `<value>`: requests a specific version of an object.
+                - For STIX objects this requests objects whose modified time matches exactly the provided value. This
+                value MUST follow the rules for timestamp as defined in [STIX™ Version 2.0. Part 1: STIX Core Concepts].
+                - For example: "2016-01-01T01:01:01.000Z" tells the server to give you the exact STIX object with a
+                modified time of "2016-01-01T01:01:01.000Z".
+                - For non-STIX objects this value MAY be any string that represents the version of that object type. If
+                the target format does not support object versions, this parameter MUST be ignored.
+      responses:
+        200:
+          description: OK
+          headers:
+            Content-Range:
+              description: ""
+              type: string
+              pattern: "^items [\\d]+-[\\d]+\\/[\\d]+$"
+          schema:
+            $ref: '#/definitions/manifest'
+            example: |
+              {
+                "objects": [
+                  {
+                    "id": "indicator--29aba82c-5393-42a8-9edb-6a2cb1df070b",
+                    "date_added": "2016-11-01T03:04:05Z",
+                    "versions": ["2016-11-03T12:30:59.000Z","2016-12-03T12:30:59.000Z"],
+                    "media_types": ["application/vnd.oasis.stix+json; version=2.0"]
+                  },
+                  {
+                    "id": "indicator--ef0b28e1-308c-4a30-8770-9b4851b260a5",
+                    "date_added": "2016-11-01T10:29:05Z",
+                    "versions": ["2016-11-03T12:30:59.000Z"],
+                    "media_types": ["application/vnd.oasis.stix+json; version=2.0"]
+                  }
+                ]
+              }
+        404:
+          description: The Manifest resource does not exist or the client does not have access to the Manifest resource.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        401:
+          description: The client either needs to authenticate or does not have access to get manifests for objects in the Collection.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+        403:
+          description: The client either needs to authenticate or does not have access to get manifests for objects in the Collection.
+          schema:
+            $ref: '#/definitions/error'
+            example: |
+              {
+                "title": "Error condition XYZ",
+                "description": "This error is caused when the application tries to access data...",
+                "error_id": "1234",
+                "error_code": "581234",
+                "http_status": "409",
+                "external_details": "http://example.com/ticketnumber1/errorid-1234",
+                "details": {
+                  "somekey1": "somevalue",
+                  "somekey2": "some other value"
+                }
+              }
+definitions:
+  bundle:
+    type: object
+    description: |
+      A Bundle is a collection of arbitrary STIX Objects and Marking Definitions grouped together in a single container.
+      A Bundle does not have any semantic meaning and Objects are not considered related by virtue of being in the same
+      Bundle. Bundle is not STIX Object, so it does not have any of the Common Properties other than the typeand id
+      properties. Bundle is transient and implementations should not assume that other implementations will treat it as
+      a persistent object.
+    properties:
+      type:
+        required:
+          - true
+        type: string
+        enum:
+          - bundle
+        description: The type property identifies the type of object. The value of this property MUST be bundle.
+      id:
+        required:
+          - true
+        $ref: '#/definitions/identifier'
+        description: |
+          An identifier for this Bundle. The id property for the Bundle is designed to help tools that may need it for
+          processing, but tools are not required to store or track it. Consuming tools should not rely on the presence
+          of this property or the ability to refer to bundles by ID.
+      spec_version:
+        type: string
+        enum:
+          - "2.0"
+        required:
+          - true
+        description: |
+          The version of the STIX specification used to represent the content in this Bundle. This enables non-TAXII
+          transports or other transports without their own content identification mechanisms to know the version of
+          STIX content. The value of this property MUST be 2.0for bundles containing STIX Objects defined in this
+          specification.
+      objects:
+        type: array
+        description: |
+          Specifies a set of one or more STIX Objects. Objects in this list MUST be a STIX Object (SDO, SRO or Custom
+          Object) or a Marking Definition object.
+        items:
+          type: object
+  collection:
+    type: object
+    description: |
+      The collection resource contains general information about a Collection, such as its id, a human-readable title
+      and description, an optional list of supported media_types (representing the media type of objects can be
+      requested from or added to it), and whether the TAXII Client, as authenticated, can get objects from the
+      Collection and/or add objects to it.
+    properties:
+      id:
+        $ref: '#/definitions/identifier'
+        description: |
+          The id property universally and uniquely identifies this Collection. It is used in the Get Collection Endpoint
+          (see section 5.2) as the <id> parameter to retrieve the Collection.
+        required:
+          - true
+      title:
+        type: string
+        required:
+          - true
+        description: A human readable plain text title used to identify this Collection.
+      description:
+        type: string
+        description: A human readable plain text description for this Collection.
+      can_read:
+        type: boolean
+        description: Indicates if the requester can read (i.e., GET) objects from this Collection.
+        required:
+          - true
+      can_write:
+        type: boolean
+        description: Indicates if the the requester can write (i.e., POST) objects to this Collection.
+        required:
+          - true
+      media_types:
+        type: array
+        description: |
+          A list of supported media types for Objects in this Collection. Absence of this field is equivalent to a
+          single-value list containing  application/vnd.oasis.stix+json.
+        items:
+          type: string
+  collections:
+    type: object
+    description: The collections resource is a simple wrapper around a list of collection resources.
+    properties:
+      collections:
+        type: array
+        description: "A Collections Resource"
+        items:
+          $ref: '#/definitions/collection'
+  dictionary:
+    type: object
+    description: "A dictionary is a JSON object that captures an arbitrary set of key/value pairs."
+  discovery:
+    type: object
+    description: |
+      The discovery resource contains information about a TAXII Server, such as a human-readable title, description, and
+      contact information, as well as a list of API Roots that it is advertising. It also has an indication of which API
+      Root it considers the default, or the one to use in the absence of other information/user choice.
+    properties:
+      title:
+        description: A human readable plain text name used to identify this server​
+        required:
+          - true
+        type: string
+      description:
+        type: string
+        description: A human readable ​plain text​ description for this server
+      contact:
+        type: string
+        description: The human readable plain text contact information for this server and/or the administrator of this server
+      default:
+        type: string
+        description: |
+          The default API Root that a TAXII Client ​MAY​ use. Absence of this field indicates that there is no default API
+          Root. The default API Root ​MUST ​be an item in api_roots​.
+      api_roots:
+        description: A list of URLs that identify known API Roots. This list MAY​ be filtered on a per-client basis
+        type: array
+        items:
+          type: string
+  identifier:
+    type: string
+    pattern: "[a-f]+--[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}"
+  manifest:
+    type: object
+    description: "A Manifest Resource"
+    properties:
+      objects:
+        description: |
+          The list of manifest entries for objects returned by the request. If there are no manifest-entry items in the
+          list, this key MUST be omitted and the response is an empty object.
+        type: array
+        items:
+          $ref: '#/definitions/manifest-entry'
+  manifest-entry:
+    type: object
+    properties:
+      id:
+        $ref: '#/definitions/identifier'
+        description: The identifier of the object that this manifest entry describes.
+      date_added:
+        $ref: '#/definitions/timestamp'
+        description: The date and time this object was added to the server.
+      versions:
+        type: array
+        description: |
+          A list of available versions, sorted in order from most recent version to least recent version.
+
+          For example versions[0] contains the newest version and versions[len-1] contains the oldest version.
+
+          For objects in STIX format, the STIX modified field is the version.
+        items:
+          type: string
+      media_types:
+        type: array
+        description: The media types that this object can be requested in.
+        items:
+          type: string
+  timestamp:
+    type: string
+    pattern: ^(?:[1-9]\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z|[+-][01]\d:[0-5]\d)$
+    description: "The timestamp type defines how timestamps are represented in TAXII and is represented in serialization as a string. "
+  status:
+    type: object
+    description: |
+      The status resource represents information about a request to add objects to a Collection. It contains information
+      about the status of the request, such as whether or not it's completed (status) and the status of individual
+      objects within the request (i.e. whether they are still pending, completed and failed, or completed and succeeded).
+
+      The status resource is returned in two places: as a response to the initial request (see section 5.4) and in
+      response to a get status request (see section 4.3), which can be made after the initial request to continuously
+      monitor its status.
+
+      The list of objects that are still pending and the list of objects that have been added are both lists of strings
+      containing the identifier of the object (e.g., for STIX objects, their id). The list of objects that failed to be
+      added is a simple type so that both the id and a message indicating why it failed can be provided.
+    properties:
+      id:
+        description: The identifier of this Status resource.
+        $ref: '#/definitions/identifier'
+        required:
+          - true
+      status:
+        description: |
+          The overall status of a previous POST request where an HTTP 202 (Accept) was returned. The value of this
+          property MUST be one of complete or pending. A value of complete indicates that this resource will not be
+          updated further and MAY be removed in the future. A status of pending indicates that this resource MAY update
+          in the future.
+        type: string
+        enum: 
+          - pending
+          - complete
+        required:
+          - true
+      request_timestamp:
+        description: The datetime of the request that this status resource is monitoring.
+        $ref: '#/definitions/timestamp'
+      total_count:
+        type: integer
+        required:
+          - true
+        description: |
+          The total number of objects that were in the request. For a STIX bundle this would be the number of objects in
+          the bundle.
+      success_count:
+        type: integer
+        required:
+          - true
+        description: The number of objects that were successfully created.
+      successess:
+        description: |
+          A list of object IDs that were successfully processed. For STIX objects the STIX ID MUST be used here. For
+          object types that do not have their own identifier, the server MAY use any value as the id.
+        type: array
+        items:
+          type: string
+      failure_count:
+        type: integer
+        required:
+          - true
+        description: The number of objects that failed to be created.
+      failures:
+        description: A list of objects that were not successfully processed.
+        type: array
+        items:
+          $ref: '#/definitions/status-failure'
+      pending_count:
+        type: integer
+        required:
+          - true
+        description: The number of objects that have yet to be processed.
+      pendings:
+        description: |
+          A list of objects for objects that have yet to be processed. For STIX objects the STIX ID MUST be used here.
+          For object types that do not have their own identifier, the server MAY use any value as the id.
+        type: array
+        items:
+          type: string
+  status-failure:
+    type: object
+    description: |
+      This type represents an object that was not added to the Collection. It contains the id of the object and a
+      message describing why it couldn't be added.
+    properties:
+      id:
+        description: |
+          The identifier of the object that failed to be created. For STIX objects the id MUST be the STIX Object id.
+          For object types that do not have their own identifier, the server MAY use any value as the id.
+        type: string
+        required:
+          - true
+      message:
+        type: string
+        description: A message indicating why the object failed to be created.
+  api-root:
+    type: object
+    description: |
+      The api-root resource contains general information about the API Root, such as a human-readable title and
+      description, the TAXII versions it supports, and the maximum size of the content body it will accept in a PUT or
+      POST (max_content_length).
+    properties:
+      title:
+        description: A human readable plain text name used to identify this API instance.
+        type: string
+        required:
+          - true
+      description:
+        description: A human readable plain text description for this API Root.
+        type: string
+      versions:
+        required:
+          - true
+        description: |
+          The list of TAXII versions that this API Root is compatible with. A value of taxii-2.0 MUST be included in
+          this list to indicate conformance with this specification.
+        type: array
+        items:
+          type: string
+      max_content_length:
+        type: integer
+        description: |
+          The maximum size of the request body in octets (8-bit bytes) that the server can support. This applies to
+          requests only and is determined by the server. Requests with total body length values smaller than this value
+          MUST NOT result in an HTTP 413 (Request Entity Too Large) response.
+        required:
+          - true
+  error:
+    type: object
+    properties:
+      title:
+        type: string
+        description: A human readable plain text title for this error.
+        required:
+          - true
+      description:
+        type: string
+        description: |
+          A human readable plain text description that gives details about the error or problem that was encountered by
+          the application.
+      error_id:
+        type: string
+        description: |
+          An identifier for this particular error instance. A TAXII Server might choose to assign each error occurrence
+          it's own identifier in order to facilitate debugging.
+      error_code:
+        type: string
+        description: |
+          The error code for this error type. A TAXII Server might choose to assign a common error code to all errors of
+          the same type. Error codes are application-specific and not intended to be meaningful across different TAXII
+          Servers.
+      http_status:
+        type: string
+        description: The HTTP status code applicable to this error.
+      external_details:
+        type: string
+        description: |
+          A URL that points to additional details. For example, this could be a URL pointing to a knowledge base article
+          describing the error code. Absence of this field indicates that there are no additional details.
+      details:
+        description: |
+          The details property captures additional server-specific details about the error. The keys and values are
+          determined by the TAXII Server and MAY be any valid JSON object structure.
+        $ref: '#/definitions/dictionary'

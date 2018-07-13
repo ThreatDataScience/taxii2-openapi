@@ -16,10 +16,7 @@ format that is the industry standard for documenting and describing HTTP APIs.
 
 # Todo
 
-Currently the OpenAPI document includes all endpoints listed in the Taxii 2.0 specification, as well as model definitions
-for the Taxii data structures. However, the document does not yet include the Stix 2.0 objects.
-
-Additionally, the OpenAPI document is missing terms of service as well as other information regarding the
+The OpenAPI document is missing terms of service as well as other information regarding the
 Oasis [Cyber Threat Intelligence Technical Committee](https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=cti).
 
 # Contributing

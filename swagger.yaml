@@ -1031,47 +1031,7 @@ paths:
               }
 definitions:
   bundle:
-    type: object
-    description: |
-      A Bundle is a collection of arbitrary STIX Objects and Marking Definitions grouped together in a single container.
-      A Bundle does not have any semantic meaning and Objects are not considered related by virtue of being in the same
-      Bundle. Bundle is not STIX Object, so it does not have any of the Common Properties other than the typeand id
-      properties. Bundle is transient and implementations should not assume that other implementations will treat it as
-      a persistent object.
-    properties:
-      type:
-        required:
-          - true
-        type: string
-        enum:
-          - bundle
-        description: The type property identifies the type of object. The value of this property MUST be bundle.
-      id:
-        required:
-          - true
-        $ref: '#/definitions/identifier'
-        description: |
-          An identifier for this Bundle. The id property for the Bundle is designed to help tools that may need it for
-          processing, but tools are not required to store or track it. Consuming tools should not rely on the presence
-          of this property or the ability to refer to bundles by ID.
-      spec_version:
-        type: string
-        enum:
-          - "2.0"
-        required:
-          - true
-        description: |
-          The version of the STIX specification used to represent the content in this Bundle. This enables non-TAXII
-          transports or other transports without their own content identification mechanisms to know the version of
-          STIX content. The value of this property MUST be 2.0for bundles containing STIX Objects defined in this
-          specification.
-      objects:
-        type: array
-        description: |
-          Specifies a set of one or more STIX Objects. Objects in this list MUST be a STIX Object (SDO, SRO or Custom
-          Object) or a Marking Definition object.
-        items:
-          type: object
+    $ref: 'https://raw.githubusercontent.com/oasis-open/cti-stix2-json-schemas/master/schemas/common/bundle.json#'
   collection:
     type: object
     description: |
